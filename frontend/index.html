@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VR AI – Your AI Voice Assistant</title>
+  <meta name="description" content="VR AI – Intelligent AI-powered call assistant for incoming and outgoing calls with real-time transcription." />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ===== SCREEN 1: HOME / DIALER ===== -->
+  <div id="screen-home" class="screen active">
+    <div class="home-bg-orbs">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+    </div>
+    <header class="home-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="18" cy="18" r="18" fill="url(#grad1)"/>
+            <path d="M10 12l8 12 8-12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="18" cy="18" r="3" fill="white" opacity="0.9"/>
+            <line x1="18" y1="10" x2="18" y2="15" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+            <defs>
+              <linearGradient id="grad1" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#7C3AED"/>
+                <stop offset="1" stop-color="#06B6D4"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span class="brand-name">VR AI</span>
+      </div>
+      <button class="icon-btn" id="settings-btn" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </header>
+
+    <div class="home-hero">
+      <div class="ai-avatar-pulse">
+        <div class="pulse-ring r1"></div>
+        <div class="pulse-ring r2"></div>
+        <div class="pulse-ring r3"></div>
+        <div class="ai-avatar-core">
+          <svg viewBox="0 0 60 60" fill="none">
+            <circle cx="30" cy="30" r="30" fill="url(#avatarGrad)"/>
+            <path d="M18 28l12 18 12-18" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="30" cy="28" r="5" fill="white" opacity="0.95"/>
+            <defs>
+              <linearGradient id="avatarGrad" x1="0" y1="0" x2="60" y2="60">
+                <stop stop-color="#7C3AED"/>
+                <stop offset="1" stop-color="#06B6D4"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+      </div>
+      <h1 class="hero-title">VR AI</h1>
+      <p class="hero-subtitle">Your intelligent voice companion</p>
+      <div class="ai-status-badge">
+        <span class="status-dot active"></span>
+        AI Ready
+      </div>
+    </div>
+
+    <!-- Dialer -->
+    <div class="dialer-card glass-card">
+      <div class="dialer-display">
+        <input type="tel" id="dialer-input" class="dialer-screen" placeholder="Enter number or name..." readonly />
+        <button id="backspace-btn" class="dialer-back-btn" aria-label="Backspace">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
+        </button>
+      </div>
+      <div class="dialer-keypad" id="dialer-keypad">
+        <button class="key-btn" data-digit="1"><span class="key-num">1</span><span class="key-sub"></span></button>
+        <button class="key-btn" data-digit="2"><span class="key-num">2</span><span class="key-sub">ABC</span></button>
+        <button class="key-btn" data-digit="3"><span class="key-num">3</span><span class="key-sub">DEF</span></button>
+        <button class="key-btn" data-digit="4"><span class="key-num">4</span><span class="key-sub">GHI</span></button>
+        <button class="key-btn" data-digit="5"><span class="key-num">5</span><span class="key-sub">JKL</span></button>
+        <button class="key-btn" data-digit="6"><span class="key-num">6</span><span class="key-sub">MNO</span></button>
+        <button class="key-btn" data-digit="7"><span class="key-num">7</span><span class="key-sub">PQRS</span></button>
+        <button class="key-btn" data-digit="8"><span class="key-num">8</span><span class="key-sub">TUV</span></button>
+        <button class="key-btn" data-digit="9"><span class="key-num">9</span><span class="key-sub">WXYZ</span></button>
+        <button class="key-btn" data-digit="*"><span class="key-num">*</span><span class="key-sub"></span></button>
+        <button class="key-btn" data-digit="0"><span class="key-num">0</span><span class="key-sub">+</span></button>
+        <button class="key-btn" data-digit="#"><span class="key-num">#</span><span class="key-sub"></span></button>
+      </div>
+      <div class="dialer-actions">
+        <button class="action-btn secondary" id="simulate-incoming-btn" title="Simulate incoming call">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1.24h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.83A16 16 0 0 0 13.07 14l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/><polyline points="16 2 20 6 16 10"/></svg>
+          Incoming
+        </button>
+        <button class="call-btn outgoing" id="call-btn">
+          <svg viewBox="0 0 24 24" fill="white"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1.24h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.83A16 16 0 0 0 13.07 14l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </button>
+        <button class="action-btn secondary" id="voice-dial-btn" title="Voice dial">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          Voice
+        </button>
+      </div>
+    </div>
+
+    <!-- Recent calls -->
+    <div class="recent-section glass-card">
+      <h3 class="section-title">Recent</h3>
+      <div id="recent-calls-list">
+        <div class="recent-item">
+          <div class="recent-avatar" style="background: linear-gradient(135deg,#7C3AED,#06B6D4)">A</div>
+          <div class="recent-info"><span class="recent-name">Alex</span><span class="recent-meta incoming">↙ Incoming · 3m 21s</span></div>
+          <span class="recent-time">Today</span>
+        </div>
+        <div class="recent-item">
+          <div class="recent-avatar" style="background: linear-gradient(135deg,#F59E0B,#EF4444)">S</div>
+          <div class="recent-info"><span class="recent-name">Sarah</span><span class="recent-meta outgoing">↗ Outgoing · 1m 05s</span></div>
+          <span class="recent-time">Yesterday</span>
+        </div>
+        <div class="recent-item">
+          <div class="recent-avatar" style="background: linear-gradient(135deg,#10B981,#06B6D4)">M</div>
+          <div class="recent-info"><span class="recent-name">Mom</span><span class="recent-meta incoming">↙ Incoming · 12m 45s</span></div>
+          <span class="recent-time">Mon</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 2: INCOMING CALL ===== -->
+  <div id="screen-incoming" class="screen">
+    <div class="call-bg">
+      <div class="call-bg-ripple r1"></div>
+      <div class="call-bg-ripple r2"></div>
+      <div class="call-bg-ripple r3"></div>
+    </div>
+    <div class="ai-banner incoming-banner">
+      <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="url(#b1)"/><path d="M4 7l4 6 4-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="7" r="2" fill="white"/><defs><linearGradient id="b1" x1="0" y1="0" x2="16" y2="16"><stop stop-color="#7C3AED"/><stop offset="1" stop-color="#06B6D4"/></linearGradient></defs></svg>
+      VR AI · Screening call
+    </div>
+    <div class="caller-info">
+      <div class="caller-avatar incoming-glow">
+        <div class="caller-av-inner" id="incoming-avatar-letter">?</div>
+      </div>
+      <h2 class="caller-name" id="incoming-caller-name">Unknown Caller</h2>
+      <p class="caller-number" id="incoming-caller-number">+1 (555) 000-0000</p>
+      <div class="ai-screening-box glass-card">
+        <div class="screening-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+        </div>
+        <div class="screening-text">
+          <span class="screening-label">VR AI is screening this call</span>
+          <span class="screening-sub" id="screening-transcript">"Hello, who's calling please?"</span>
+        </div>
+        <div class="screening-wave">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+    <div class="incoming-actions">
+      <div class="action-col">
+        <button class="round-action decline" id="decline-btn">
+          <svg viewBox="0 0 24 24" fill="white" width="28" height="28"><path d="M23.36 14.24c-.71-2.22-2.54-3.81-4.86-4.24L16.27 12a3.34 3.34 0 0 1-1.54 1.54l-4.14-4.14a3.34 3.34 0 0 1 1.54-1.54l2-2.23C13.7 3.31 11.5.9 8.76.22 6.53-.36 4.28.69 3.25 2.72L1.6 6.1C.55 8.22.87 10.8 2.46 12.53L12.47 22.54c1.73 1.59 4.31 1.91 6.43.86l3.38-1.65c2.03-1.03 3.08-3.28 2.5-5.51z"/></svg>
+        </button>
+        <span class="action-label">Decline</span>
+      </div>
+      <div class="action-col">
+        <button class="round-action ai-screen" id="ai-screen-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="24" height="24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+        </button>
+        <span class="action-label">Screened</span>
+      </div>
+      <div class="action-col">
+        <button class="round-action accept" id="accept-btn">
+          <svg viewBox="0 0 24 24" fill="white" width="28" height="28"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1.24h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.83A16 16 0 0 0 13.07 14l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </button>
+        <span class="action-label">Accept</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 3: OUTGOING CALL ===== -->
+  <div id="screen-outgoing" class="screen">
+    <div class="call-bg outgoing-bg">
+      <div class="call-bg-ripple r1"></div>
+      <div class="call-bg-ripple r2"></div>
+    </div>
+    <div class="caller-info">
+      <div class="caller-avatar outgoing-glow">
+        <div class="caller-av-inner" id="outgoing-avatar-letter">?</div>
+      </div>
+      <p class="outgoing-label">Calling via VR AI…</p>
+      <h2 class="caller-name" id="outgoing-caller-name">Unknown</h2>
+      <p class="caller-number" id="outgoing-caller-number"></p>
+      <div class="calling-dots"><span></span><span></span><span></span></div>
+    </div>
+    <div class="outgoing-actions">
+      <button class="round-action decline large" id="end-outgoing-btn">
+        <svg viewBox="0 0 24 24" fill="white" width="32" height="32"><path d="M23.36 14.24c-.71-2.22-2.54-3.81-4.86-4.24L16.27 12a3.34 3.34 0 0 1-1.54 1.54l-4.14-4.14a3.34 3.34 0 0 1 1.54-1.54l2-2.23C13.7 3.31 11.5.9 8.76.22 6.53-.36 4.28.69 3.25 2.72L1.6 6.1C.55 8.22.87 10.8 2.46 12.53L12.47 22.54c1.73 1.59 4.31 1.91 6.43.86l3.38-1.65c2.03-1.03 3.08-3.28 2.5-5.51z"/></svg>
+      </button>
+      <span class="action-label" style="color:#fff;margin-top:10px;display:block">Cancel</span>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 4: ACTIVE CALL ===== -->
+  <div id="screen-active" class="screen">
+    <div class="active-header glass-card">
+      <div class="active-caller-row">
+        <div class="active-avatar" id="active-avatar">
+          <span id="active-avatar-letter">?</span>
+        </div>
+        <div class="active-caller-meta">
+          <h2 id="active-caller-name">Caller</h2>
+          <p id="active-call-status">Connected · <span id="call-timer">00:00</span></p>
+        </div>
+        <div class="active-call-quality">
+          <div class="quality-bar"></div>
+          <div class="quality-bar"></div>
+          <div class="quality-bar"></div>
+          <div class="quality-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Waveform canvas -->
+    <div class="waveform-section">
+      <canvas id="waveform-canvas"></canvas>
+      <div class="speaker-label" id="speaker-label">
+        <span class="speaker-dot"></span>
+        <span id="speaker-name">You</span> is speaking
+      </div>
+    </div>
+
+    <!-- AI Transcript -->
+    <div class="transcript-card glass-card">
+      <div class="transcript-header">
+        <div class="transcript-title">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><circle cx="12" cy="12" r="10" stroke="url(#tg)" stroke-width="2"/><path d="M8 12h8M8 8h5M8 16h6" stroke="url(#tg)" stroke-width="2" stroke-linecap="round"/><defs><linearGradient id="tg" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#7C3AED"/><stop offset="1" stop-color="#06B6D4"/></linearGradient></defs></svg>
+          Live Transcript
+        </div>
+        <div class="ai-thinking" id="ai-thinking">
+          <span></span><span></span><span></span>
+          VR AI thinking…
+        </div>
+      </div>
+      <div class="transcript-scroll" id="transcript-scroll">
+        <div class="transcript-placeholder">
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+          <p>Transcript will appear here…</p>
+        </div>
+      </div>
+
+      <!-- AI Response Box -->
+      <div class="ai-response-box" id="ai-response-box">
+        <div class="ai-response-header">
+          <span class="ai-tag">VR AI</span>
+          <span class="ai-response-label">Suggested Reply</span>
+        </div>
+        <p class="ai-response-text" id="ai-response-text"></p>
+        <button class="speak-reply-btn" id="speak-reply-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          Speak Reply
+        </button>
+      </div>
+    </div>
+
+    <!-- Call controls -->
+    <div class="call-controls glass-card">
+      <div class="control-row">
+        <button class="ctrl-btn" id="mute-btn" aria-label="Mute">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <span>Mute</span>
+        </button>
+        <button class="ctrl-btn" id="speaker-btn" aria-label="Speaker">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          <span>Speaker</span>
+        </button>
+        <button class="ctrl-btn" id="ai-assist-btn" aria-label="AI Assist">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          <span>AI Assist</span>
+        </button>
+        <button class="ctrl-btn" id="record-btn" aria-label="Record">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="8" fill="none"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+          <span>Record</span>
+        </button>
+      </div>
+      <button class="end-call-btn" id="end-call-btn">
+        <svg viewBox="0 0 24 24" fill="white" width="30" height="30"><path d="M23.36 14.24c-.71-2.22-2.54-3.81-4.86-4.24L16.27 12a3.34 3.34 0 0 1-1.54 1.54l-4.14-4.14a3.34 3.34 0 0 1 1.54-1.54l2-2.23C13.7 3.31 11.5.9 8.76.22 6.53-.36 4.28.69 3.25 2.72L1.6 6.1C.55 8.22.87 10.8 2.46 12.53L12.47 22.54c1.73 1.59 4.31 1.91 6.43.86l3.38-1.65c2.03-1.03 3.08-3.28 2.5-5.51z"/></svg>
+        End Call
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 5: CALL SUMMARY ===== -->
+  <div id="screen-summary" class="screen">
+    <div class="home-bg-orbs">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+    </div>
+    <div class="summary-container">
+      <div class="summary-icon">
+        <svg viewBox="0 0 60 60" fill="none">
+          <circle cx="30" cy="30" r="30" fill="url(#sg)"/>
+          <path d="M20 30l7 7 13-14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs><linearGradient id="sg" x1="0" y1="0" x2="60" y2="60"><stop stop-color="#7C3AED"/><stop offset="1" stop-color="#10B981"/></linearGradient></defs>
+        </svg>
+      </div>
+      <h2 class="summary-title">Call Ended</h2>
+      <p class="summary-duration">Duration: <strong id="summary-duration">00:00</strong></p>
+
+      <div class="summary-card glass-card">
+        <div class="summary-section-title">
+          <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><circle cx="8" cy="8" r="8" fill="url(#sg2)"/><path d="M4 7l4 6 4-6" stroke="white" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="7" r="2" fill="white"/><defs><linearGradient id="sg2" x1="0" y1="0" x2="16" y2="16"><stop stop-color="#7C3AED"/><stop offset="1" stop-color="#06B6D4"/></linearGradient></defs></svg>
+          AI Call Summary
+        </div>
+        <p class="summary-text" id="summary-ai-text">Generating summary…</p>
+      </div>
+
+      <div class="summary-card glass-card">
+        <div class="summary-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Full Transcript
+        </div>
+        <div class="summary-transcript" id="summary-transcript-text">No transcript available.</div>
+      </div>
+
+      <div class="summary-actions">
+        <button class="summary-btn secondary" id="share-summary-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share
+        </button>
+        <button class="summary-btn primary" id="done-btn">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

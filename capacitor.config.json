@@ -1,0 +1,6 @@
+{
+  "appId": "com.example.aisentinel",
+  "appName": "AI Sentinel",
+  "webDir": "frontend",
+  "bundledWebRuntime": false
+}

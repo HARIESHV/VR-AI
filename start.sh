@@ -1,8 +1,8 @@
 #!/bin/bash
 # VR AI - Render Deployment Script
 echo "--- Starting Build/Install Phase ---"
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+python -m pip install --upgrade pip --break-system-packages
+pip install -r requirements.txt --break-system-packages
 
 echo "--- Starting Server Phase ---"
 # Check if gunicorn is available, otherwise use uvicorn

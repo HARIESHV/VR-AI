@@ -1,11 +1,14 @@
 import os
 import asyncio
+import json
+import base64
+import secrets
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
@@ -17,7 +20,6 @@ from .database import engine, get_db
 from .security import create_access_token, decode_access_token, hash_password, verify_password
 
 # Google API Imports
-from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 
@@ -25,6 +27,9 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
 GOOGLE_SCOPES = ["https://www.googleapis.com/auth/contacts.readonly"]
+FRONTEND_REDIRECT_ON_SYNC = os.getenv("FRONTEND_REDIRECT_ON_SYNC", "/")
+_GOOGLE_OAUTH_STATE_TTL_SECONDS = 600
+_google_oauth_states: dict[str, tuple[str, float]] = {}
 
 app = FastAPI(title="VR AI – Intelligent Call Assistant API", version="2.0.0")
 auth_scheme = HTTPBearer()
@@ -107,6 +112,27 @@ def get_current_user_id(
         return UUID(user_id)
     except ValueError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+
+def _decode_jwt_exp(jwt_token: str) -> int | None:
+    try:
+        payload = jwt_token.split(".")[1]
+        padded = payload + "=" * (-len(payload) % 4)
+        decoded = base64.urlsafe_b64decode(padded.encode("utf-8")).decode("utf-8")
+        data = json.loads(decoded)
+        exp = data.get("exp")
+        if isinstance(exp, int):
+            return exp
+    except Exception:
+        return None
+    return None
+
+
+def _cleanup_google_oauth_states() -> None:
+    now = datetime.utcnow().timestamp()
+    expired = [k for k, (_, ts) in _google_oauth_states.items() if now - ts > _GOOGLE_OAUTH_STATE_TTL_SECONDS]
+    for state_key in expired:
+        _google_oauth_states.pop(state_key, None)
 
 
 @app.get("/health")
@@ -323,9 +349,24 @@ def get_insights(
 
 
 # ── Google Contacts Sync ──────────────────────────────
-@app.get("/auth/google")
-def google_auth(user_id: str):
-    """Start Google OAuth flow."""
+@app.get("/auth/google/start")
+def google_auth_start(credentials: HTTPAuthorizationCredentials = Depends(auth_scheme)):
+    """Start Google OAuth flow for the authenticated user."""
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET or not GOOGLE_REDIRECT_URI:
+        raise HTTPException(status_code=500, detail="Google OAuth is not configured")
+
+    user_id = decode_access_token(credentials.credentials)
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    token_exp = _decode_jwt_exp(credentials.credentials)
+    if token_exp and token_exp < int(datetime.utcnow().timestamp()):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session expired")
+
+    _cleanup_google_oauth_states()
+    oauth_state = secrets.token_urlsafe(32)
+    _google_oauth_states[oauth_state] = (user_id, datetime.utcnow().timestamp())
+
     flow = Flow.from_client_config(
         {
             "web": {
@@ -341,15 +382,26 @@ def google_auth(user_id: str):
     authorization_url, _ = flow.authorization_url(
         access_type="offline",
         include_granted_scopes="true",
-        state=user_id,  # Pass user_id in state
+        state=oauth_state,
+        prompt="consent",
     )
-    return RedirectResponse(authorization_url)
+    return {"authorization_url": authorization_url}
 
 
 @app.get("/auth/google/callback")
-def google_callback(code: str, state: str, db: Session = Depends(get_db)):
+def google_callback(request: Request, code: str | None = None, state: str | None = None, db: Session = Depends(get_db)):
     """Handle Google OAuth callback and sync contacts."""
-    user_id = state
+    if not code or not state:
+        raise HTTPException(status_code=400, detail="Missing OAuth callback params")
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET or not GOOGLE_REDIRECT_URI:
+        raise HTTPException(status_code=500, detail="Google OAuth is not configured")
+
+    _cleanup_google_oauth_states()
+    state_entry = _google_oauth_states.pop(state, None)
+    if not state_entry:
+        raise HTTPException(status_code=400, detail="Invalid or expired OAuth state")
+    user_id, _ = state_entry
+
     flow = Flow.from_client_config(
         {
             "web": {
@@ -416,10 +468,12 @@ def google_callback(code: str, state: str, db: Session = Depends(get_db)):
             synced_count += 1
 
     db.commit()
-    
-    # Redirect back to the frontend
-    # Since it's a SPA, we just redirect to the root or a success page
-    return RedirectResponse(url="/?sync=success")
+    frontend_base = str(request.base_url).rstrip("/")
+    if FRONTEND_REDIRECT_ON_SYNC.startswith("http://") or FRONTEND_REDIRECT_ON_SYNC.startswith("https://"):
+        redirect_base = FRONTEND_REDIRECT_ON_SYNC.rstrip("/")
+    else:
+        redirect_base = f"{frontend_base}{FRONTEND_REDIRECT_ON_SYNC}"
+    return RedirectResponse(url=f"{redirect_base}?sync=success&count={synced_count}")
 
 
 # ── Contacts API ──────────────────────────────────────

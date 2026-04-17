@@ -50,6 +50,10 @@ DATABASE_URL=postgresql+psycopg://<user>:<password>@<host>/vrai?sslmode=require
 JWT_SECRET=your_super_secret_key
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=1440
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
+FRONTEND_REDIRECT_ON_SYNC=/
 ```
 
 ### 3. Local Execution

@@ -92,6 +92,18 @@ function showToast(msg, duration = 3000) {
   toastTimer = setTimeout(() => t.classList.remove('show'), duration);
 }
 
+function parseJwtPayload(token) {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
 // ── Dialer ─────────────────────────────────────────
 const dialerInput = $('dialer-input');
 
@@ -421,8 +433,6 @@ function startSpeechRecognition() {
   recog.interimResults = true;
   recog.lang          = 'en-US';
   state.recognition   = recog;
-
-  let interimId = null;
 
   recog.onresult = e => {
     let interim = '';
@@ -997,8 +1007,7 @@ document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => {
 
 // ── Authentication Handlers ────────────────────────
 let isSignUp = false;
-$('auth-toggle').addEventListener('click', (e) => {
-  e.preventDefault();
+function updateAuthModeUI() {
   isSignUp = !isSignUp;
   $('auth-title').textContent = isSignUp ? 'Create Account' : 'Welcome Back';
   $('auth-subtitle').textContent = isSignUp ? 'Start your AI journey today' : 'Sign in to your intelligent assistant';
@@ -1006,11 +1015,16 @@ $('auth-toggle').addEventListener('click', (e) => {
   $('auth-toggle-text').innerHTML = isSignUp ? 
     'Already have an account? <a href="#" id="auth-toggle">Sign In</a>' :
     "Don't have an account? <a href=\"#\" id=\"auth-toggle\">Sign Up</a>";
-  // Re-bind since we replaced HTML
+  // Re-bind because the anchor is replaced.
   $('auth-toggle').addEventListener('click', (ev) => {
     ev.preventDefault();
-    $('auth-toggle').click(); // recursive trigger trick or just re-run this logic
+    updateAuthModeUI();
   });
+}
+
+$('auth-toggle').addEventListener('click', (e) => {
+  e.preventDefault();
+  updateAuthModeUI();
 });
 
 $('auth-submit-btn').addEventListener('click', async () => {
@@ -1169,25 +1183,24 @@ $('contact-search').addEventListener('input', (e) => {
 // Google Sync Event
 $('google-sync-btn').addEventListener('click', () => {
   if (!authState.isLoggedIn) return showToast('Please sign in to sync contacts');
-  
-  // Get user_id from token (we need to decode it or pass it)
-  // Our decode_access_token logic is on backend, but we store user_id as 'sub' in JWT
-  // However, simpler is to just use a small helper to get user_id from state if we had it
-  // Since we don't have user_id easily on frontend without decoding JWT, 
-  // let's assume the backend can get it from the token if we use a cookie, 
-  // but here we used 'state' parameter which is standard for OAuth.
-  // I'll add a way to get user_id from the token (base64 decode)
-  
+
   const token = authState.token;
   if (!token) return;
-  
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.sub;
-    window.location.href = `${API_BASE}/auth/google?user_id=${userId}`;
-  } catch (e) {
-    showToast('Failed to start sync');
+
+  const payload = parseJwtPayload(token);
+  if (!payload || !payload.sub) {
+    showToast('Session expired. Please sign in again.');
+    return;
   }
+
+  apiRequest('/auth/google/start')
+    .then((data) => {
+      if (!data.authorization_url) throw new Error('Missing OAuth URL');
+      window.location.href = data.authorization_url;
+    })
+    .catch((err) => {
+      showToast(err.message || 'Failed to start Google sync');
+    });
 });
 
 init();

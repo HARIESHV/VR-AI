@@ -7,3 +7,6 @@ passlib[bcrypt]
 pydantic[email]
 python-dotenv
 gunicorn
+google-auth
+google-auth-oauthlib
+google-api-python-client

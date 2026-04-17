@@ -963,6 +963,15 @@ async function init() {
     window.speechSynthesis.getVoices();
     window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
   }
+
+  // Check for sync success in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('sync') === 'success') {
+    showToast('Google Contacts synced successfully!');
+    // Clean up URL
+    window.history.replaceState({}, document.title, window.location.pathname);
+    fetchContacts();
+  }
 }
 
 async function refreshAppData() {
@@ -1155,6 +1164,30 @@ $('contact-search').addEventListener('input', (e) => {
     const hasVisible = [...group.querySelectorAll('.contact-item')].some(ti => ti.style.display !== 'none');
     group.style.display = hasVisible ? 'block' : 'none';
   });
+});
+
+// Google Sync Event
+$('google-sync-btn').addEventListener('click', () => {
+  if (!authState.isLoggedIn) return showToast('Please sign in to sync contacts');
+  
+  // Get user_id from token (we need to decode it or pass it)
+  // Our decode_access_token logic is on backend, but we store user_id as 'sub' in JWT
+  // However, simpler is to just use a small helper to get user_id from state if we had it
+  // Since we don't have user_id easily on frontend without decoding JWT, 
+  // let's assume the backend can get it from the token if we use a cookie, 
+  // but here we used 'state' parameter which is standard for OAuth.
+  // I'll add a way to get user_id from the token (base64 decode)
+  
+  const token = authState.token;
+  if (!token) return;
+  
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userId = payload.sub;
+    window.location.href = `${API_BASE}/auth/google?user_id=${userId}`;
+  } catch (e) {
+    showToast('Failed to start sync');
+  }
 });
 
 init();

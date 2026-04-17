@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
@@ -15,6 +15,16 @@ from sqlalchemy.orm import Session
 from .ai import build_insights
 from .database import engine, get_db
 from .security import create_access_token, decode_access_token, hash_password, verify_password
+
+# Google API Imports
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
+GOOGLE_SCOPES = ["https://www.googleapis.com/auth/contacts.readonly"]
 
 app = FastAPI(title="VR AI – Intelligent Call Assistant API", version="2.0.0")
 auth_scheme = HTTPBearer()
@@ -310,6 +320,106 @@ def get_insights(
     ).mappings().all()
 
     return build_insights(list(call_rows))
+
+
+# ── Google Contacts Sync ──────────────────────────────
+@app.get("/auth/google")
+def google_auth(user_id: str):
+    """Start Google OAuth flow."""
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+            }
+        },
+        scopes=GOOGLE_SCOPES,
+    )
+    flow.redirect_uri = GOOGLE_REDIRECT_URI
+    authorization_url, _ = flow.authorization_url(
+        access_type="offline",
+        include_granted_scopes="true",
+        state=user_id,  # Pass user_id in state
+    )
+    return RedirectResponse(authorization_url)
+
+
+@app.get("/auth/google/callback")
+def google_callback(code: str, state: str, db: Session = Depends(get_db)):
+    """Handle Google OAuth callback and sync contacts."""
+    user_id = state
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+            }
+        },
+        scopes=GOOGLE_SCOPES,
+    )
+    flow.redirect_uri = GOOGLE_REDIRECT_URI
+    flow.fetch_token(code=code)
+    creds = flow.credentials
+
+    # Build People API service
+    service = build("people", "v1", credentials=creds)
+
+    # Fetch contacts
+    results = (
+        service.people()
+        .connections()
+        .list(
+            resourceName="people/me",
+            pageSize=1000,
+            personFields="names,phoneNumbers,emailAddresses",
+        )
+        .execute()
+    )
+    connections = results.get("connections", [])
+
+    synced_count = 0
+    for person in connections:
+        names = person.get("names", [])
+        name = names[0].get("displayName") if names else "Unknown"
+        
+        phones = person.get("phoneNumbers", [])
+        emails = person.get("emailAddresses", [])
+        email = emails[0].get("value") if emails else None
+        
+        for phone_entry in phones:
+            phone_number = phone_entry.get("value")
+            if not phone_number:
+                continue
+            
+            # Save to contacts table
+            db.execute(
+                text(
+                    """
+                    INSERT INTO contacts (user_id, name, phone_number, email, tag)
+                    VALUES (:user_id, :name, :phone_number, :email, :tag)
+                    ON CONFLICT (user_id, phone_number) 
+                    DO UPDATE SET name = EXCLUDED.name, email = EXCLUDED.email
+                    """
+                ),
+                {
+                    "user_id": user_id,
+                    "name": name,
+                    "phone_number": phone_number,
+                    "email": email,
+                    "tag": "google",
+                },
+            )
+            synced_count += 1
+
+    db.commit()
+    
+    # Redirect back to the frontend
+    # Since it's a SPA, we just redirect to the root or a success page
+    return RedirectResponse(url="/?sync=success")
 
 
 # ── Contacts API ──────────────────────────────────────

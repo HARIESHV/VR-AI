@@ -159,6 +159,16 @@ html, body {
 }
 .icon-btn svg { width: 18px; height: 18px; }
 
+.google-sync-btn {
+  background: rgba(66, 133, 244, 0.1) !important;
+  border-color: rgba(66, 133, 244, 0.3) !important;
+  color: #4285F4 !important;
+}
+.google-sync-btn:hover {
+  background: rgba(66, 133, 244, 0.2) !important;
+  border-color: #4285F4 !important;
+}
+
 /* Hero */
 .home-hero {
   display: flex;

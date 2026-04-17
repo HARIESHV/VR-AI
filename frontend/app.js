@@ -7,7 +7,12 @@
 'use strict';
 
 // ── Constants & State ──────────────────────────────
-const API_BASE = 'http://localhost:8000';
+const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8000' : window.location.origin;
+
+const authState = {
+  token: localStorage.getItem('vrai-token') || null,
+  isLoggedIn: !!localStorage.getItem('vrai-token'),
+};
 
 const state = {
   screen: 'home',           // home | incoming | outgoing | active | summary
@@ -35,7 +40,8 @@ const state = {
     aiAssist: true,
     autoTranscript: true,
     voiceDial: true,
-  }
+  },
+  contacts: [],
 };
 
 // ── Wake Lock (Always Active) ──────────────────────
@@ -111,7 +117,15 @@ $('call-btn').addEventListener('click', () => {
 
 function initiateOutgoingCall(number, name) {
   state.callerNumber = number;
-  state.callerName   = name || formatNumber(number);
+  
+  // Try to find contact name if not provided
+  if (!name) {
+    const contact = state.contacts.find(c => c.phone_number === number);
+    state.callerName = contact ? contact.name : formatNumber(number);
+  } else {
+    state.callerName = name;
+  }
+  
   state.callDirection = 'outgoing';
 
   // Update outgoing screen
@@ -144,7 +158,7 @@ $('simulate-incoming-btn').addEventListener('click', () => {
   triggerIncomingCall(c.name, c.number);
 });
 
-function triggerIncomingCall(name, number) {
+async function triggerIncomingCall(name, number) {
   state.callerName   = name;
   state.callerNumber = number;
   state.callDirection = 'incoming';
@@ -152,6 +166,16 @@ function triggerIncomingCall(name, number) {
   $('incoming-caller-name').textContent   = name;
   $('incoming-caller-number').textContent = number;
   $('incoming-avatar-letter').textContent = (name[0] || '?').toUpperCase();
+
+  // AI Name Suggestion for Unknown
+  if (name === 'Unknown') {
+     try {
+       const res = await apiRequest(`/ai/suggest-name?phone_number=${number}`);
+       if (res.name !== 'Unknown Caller') {
+         $('incoming-caller-name').innerHTML = `${name} <span style="font-size:12px; color:var(--primary-2); display:block; margin-top:4px">AI Hint: ${res.name}</span>`;
+       }
+     } catch {}
+  }
 
   // AI Screening transcript reset
   $('screening-transcript').textContent = '"Hello, who\'s calling please?"';
@@ -817,12 +841,28 @@ function loadSettings() {
 // ── Recent Calls ───────────────────────────────────
 let recentCalls = JSON.parse(localStorage.getItem('vrai-recent') || '[]');
 
-function addRecentCall(name, number, direction, duration) {
+async function addRecentCall(name, number, direction, duration) {
   const now  = new Date();
   const entry = { name, number, direction, duration, time: now.toISOString() };
+  
+  // Save to local storage
   recentCalls.unshift(entry);
-  if (recentCalls.length > 10) recentCalls.pop();
+  if (recentCalls.length > 50) recentCalls.pop();
   localStorage.setItem('vrai-recent', JSON.stringify(recentCalls));
+  
+  // Save to DB if logged in
+  if (authState.isLoggedIn) {
+    try {
+      await apiRequest('/call-logs', 'POST', {
+        phone_number: number,
+        direction,
+        duration_seconds: duration,
+        call_time: now.toISOString(),
+        source: 'vr-ai-web'
+      });
+    } catch (err) { console.warn('Failed to save call log to DB:', err); }
+  }
+  
   refreshRecentList();
 }
 
@@ -909,15 +949,25 @@ if ('serviceWorker' in navigator) {
 }
 
 // ── Initialise ─────────────────────────────────────
-function init() {
+async function init() {
   loadSettings();
-  refreshRecentList();
-  showScreen('home');
+  if (authState.isLoggedIn) {
+    showScreen('home');
+    refreshAppData();
+  } else {
+    showScreen('auth');
+  }
+  
   // Pre-load voices
   if (window.speechSynthesis) {
     window.speechSynthesis.getVoices();
     window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
   }
+}
+
+async function refreshAppData() {
+  await fetchContacts();
+  refreshRecentList();
 }
 
 // ── Tab Navigation (Bottom Nav) ────────────────────
@@ -936,15 +986,174 @@ document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => {
   });
 });
 
-// ── Contacts List Interactions ─────────────────────
-document.querySelectorAll('.contact-item').forEach(item => {
-  item.addEventListener('click', () => {
-    const name = item.querySelector('.contact-name').textContent;
-    const number = item.querySelector('.contact-number').textContent;
+// ── Authentication Handlers ────────────────────────
+let isSignUp = false;
+$('auth-toggle').addEventListener('click', (e) => {
+  e.preventDefault();
+  isSignUp = !isSignUp;
+  $('auth-title').textContent = isSignUp ? 'Create Account' : 'Welcome Back';
+  $('auth-subtitle').textContent = isSignUp ? 'Start your AI journey today' : 'Sign in to your intelligent assistant';
+  $('auth-submit-btn').textContent = isSignUp ? 'Sign Up' : 'Sign In';
+  $('auth-toggle-text').innerHTML = isSignUp ? 
+    'Already have an account? <a href="#" id="auth-toggle">Sign In</a>' :
+    "Don't have an account? <a href=\"#\" id=\"auth-toggle\">Sign Up</a>";
+  // Re-bind since we replaced HTML
+  $('auth-toggle').addEventListener('click', (ev) => {
+    ev.preventDefault();
+    $('auth-toggle').click(); // recursive trigger trick or just re-run this logic
+  });
+});
+
+$('auth-submit-btn').addEventListener('click', async () => {
+  const email = $('auth-email').value;
+  const password = $('auth-password').value;
+  if (!email || !password) return showToast('Please fill in all fields');
+
+  const endpoint = isSignUp ? '/auth/register' : '/auth/login';
+  try {
+    const res = await apiRequest(endpoint, 'POST', { email, password });
+    authState.token = res.access_token;
+    authState.isLoggedIn = true;
+    localStorage.setItem('vrai-token', res.access_token);
+    showToast('Signed in successfully!');
+    showScreen('home');
+    refreshAppData();
+  } catch (err) {
+    showToast(err.message || 'Authentication failed');
+  }
+});
+
+// Generic API helper
+async function apiRequest(path, method = 'GET', body = null) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (authState.token) headers['Authorization'] = `Bearer ${authState.token}`;
+  
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : null,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || 'Request failed');
+  return data;
+}
+
+// ── Contact Management ──────────────────────────────
+async function fetchContacts() {
+  try {
+    const data = await apiRequest('/contacts');
+    state.contacts = data.items;
+    renderContacts();
+  } catch {}
+}
+
+function renderContacts() {
+  const list = $('contacts-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  const grouped = {};
+  state.contacts.forEach(c => {
+    const char = c.name[0].toUpperCase();
+    if (!grouped[char]) grouped[char] = [];
+    grouped[char].push(c);
+  });
+
+  Object.keys(grouped).sort().forEach(char => {
+    const group = el('div', 'contact-group');
+    const letter = el('div', 'contact-letter', char);
+    group.appendChild(letter);
     
-    // Switch to dialer tab and fill in details automatically, or prompt
-    dialerInput.value = number;
-    initiateOutgoingCall(number, name);
+    grouped[char].forEach(c => {
+      const item = el('div', 'contact-item');
+      const avatar = el('div', 'contact-avatar', char);
+      avatar.style.background = randomGradient(c.name);
+      
+      const info = el('div', 'contact-info');
+      const name = el('span', 'contact-name', c.name);
+      if (c.tag && c.tag !== 'none') {
+        const tag = el('span', `contact-tag-badge tag-${c.tag}`, c.tag);
+        name.appendChild(tag);
+      }
+      const num = el('span', 'contact-number', c.phone_number);
+      info.append(name, num);
+      item.append(avatar, info);
+      
+      item.addEventListener('click', () => {
+        openContactModal(c);
+      });
+      group.appendChild(item);
+    });
+    list.appendChild(group);
+  });
+}
+
+const contactModal = $('contact-modal');
+let editingContactId = null;
+
+function openContactModal(contact = null) {
+  editingContactId = contact ? contact.phone_number : null;
+  $('contact-modal-title').textContent = contact ? 'Edit Contact' : 'New Contact';
+  $('contact-name-input').value = contact ? contact.name : '';
+  $('contact-phone-input').value = contact ? contact.phone_number : (dialerInput.value || '');
+  $('contact-email-input').value = contact ? (contact.email || '') : '';
+  $('contact-tag-input').value = contact ? (contact.tag || 'none') : 'none';
+  $('delete-contact-btn').style.display = contact ? 'block' : 'none';
+  
+  contactModal.classList.add('open');
+}
+
+function closeContactModal() {
+  contactModal.classList.remove('open');
+}
+
+$('contact-close-btn').addEventListener('click', closeContactModal);
+document.querySelector('.add-contact-btn').addEventListener('click', () => openContactModal());
+
+$('save-contact-btn').addEventListener('click', async () => {
+  const name = $('contact-name-input').value;
+  const num = $('contact-phone-input').value;
+  const email = $('contact-email-input').value;
+  const tag = $('contact-tag-input').value;
+  
+  if (!name || !num) return showToast('Name and Number are required');
+  
+  try {
+    await apiRequest('/contacts', 'POST', { name, phone_number: num, email, tag });
+    showToast('Contact saved');
+    fetchContacts();
+    closeContactModal();
+  } catch (err) {
+    showToast(err.message);
+  }
+});
+
+$('delete-contact-btn').addEventListener('click', async () => {
+  if (!editingContactId) return;
+  if (!confirm('Are you sure you want to delete this contact?')) return;
+  
+  try {
+    await apiRequest(`/contacts/${editingContactId}`, 'DELETE');
+    showToast('Contact deleted');
+    fetchContacts();
+    closeContactModal();
+  } catch (err) {
+    showToast(err.message);
+  }
+});
+
+// Search functionality
+$('contact-search').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll('.contact-item').forEach(item => {
+    const name = item.querySelector('.contact-name').textContent.toLowerCase();
+    const num = item.querySelector('.contact-number').textContent.toLowerCase();
+    item.style.display = (name.includes(q) || num.includes(q)) ? 'flex' : 'none';
+  });
+  // Hide empty groups
+  document.querySelectorAll('.contact-group').forEach(group => {
+    const hasVisible = [...group.querySelectorAll('.contact-item')].some(ti => ti.style.display !== 'none');
+    group.style.display = hasVisible ? 'block' : 'none';
   });
 });
 

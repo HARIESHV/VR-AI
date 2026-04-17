@@ -80,6 +80,13 @@ class LocationIn(BaseModel):
     recorded_at: datetime
 
 
+class ContactIn(BaseModel):
+    name: str
+    phone_number: str
+    email: str | None = None
+    tag: str | None = None
+
+
 def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(auth_scheme),
 ) -> UUID:
@@ -303,6 +310,61 @@ def get_insights(
     ).mappings().all()
 
     return build_insights(list(call_rows))
+
+
+# ── Contacts API ──────────────────────────────────────
+@app.get("/contacts")
+def list_contacts(user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    rows = db.execute(
+        text("SELECT * FROM contacts WHERE user_id = :user_id ORDER BY name ASC"),
+        {"user_id": str(user_id)},
+    ).mappings().all()
+    return {"items": rows}
+
+
+@app.post("/contacts")
+def create_contact(payload: ContactIn, user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    db.execute(
+        text(
+            """
+            INSERT INTO contacts (user_id, name, phone_number, email, tag)
+            VALUES (:user_id, :name, :phone_number, :email, :tag)
+            ON CONFLICT (user_id, phone_number) 
+            DO UPDATE SET name = EXCLUDED.name, email = EXCLUDED.email, tag = EXCLUDED.tag
+            """
+        ),
+        {
+            "user_id": str(user_id),
+            "name": payload.name,
+            "phone_number": payload.phone_number,
+            "email": payload.email,
+            "tag": payload.tag,
+        },
+    )
+    db.commit()
+    return {"message": "Contact saved"}
+
+
+@app.delete("/contacts/{phone_number}")
+def delete_contact(phone_number: str, user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    db.execute(
+        text("DELETE FROM contacts WHERE user_id = :user_id AND phone_number = :phone_number"),
+        {"user_id": str(user_id), "phone_number": phone_number},
+    )
+    db.commit()
+    return {"message": "Contact deleted"}
+
+
+@app.get("/ai/suggest-name")
+def ai_suggest_name(phone_number: str):
+    """Simulate AI name discovery for unknown numbers."""
+    simulated_names = {
+        "9876543210": "James Smith",
+        "1234567890": "Tech Support",
+        "5550199": "Pizza Delivery",
+    }
+    name = simulated_names.get(phone_number.replace("+", "").replace(" ", ""), "Unknown Caller")
+    return {"name": name, "confidence": 0.9}
 
 
 # ── AI Endpoints ──────────────────────────────────────

@@ -1,152 +1,82 @@
-# AI Sentinel PWA (Mobile-First)
+# VR AI – Intelligent Call Assistant Prototype (Mobile-First)
 
-A privacy-focused AI-powered web app with:
-- FastAPI backend + JWT auth
-- Neon PostgreSQL persistence
-- Mobile-first PWA frontend
-- Explicit consent gates for call and location logging
-- Real-time location tracking only while user keeps tracking enabled
-- AI insights for suspicious call behavior
+VR AI is a privacy-focused, AI-powered call management simulation. It provides a native mobile-app experience via a responsive web interface, featuring a persistent database backend with Neon PostgreSQL and AI-enhanced features like screening, transcription, and smart reply suggestions.
 
-## 1) Architecture Diagram (Text)
+## 🚀 Core Features
 
-```text
- [User on Mobile Browser / Android WebView]
-                |
-                v
-      [PWA Frontend: HTML/CSS/JS]
-  - Auth screens (JWT login/register)
-  - Consent controls (call + location)
-  - Manual call log input
-  - Start/Stop geolocation toggle
-  - Dashboard (history, map-ready timeline, AI panel)
-                |
-                | HTTPS REST API (Bearer JWT)
-                v
-        [FastAPI Backend (Python)]
-  - Auth + JWT issuance/verification
-  - Consent enforcement on data endpoints
-  - Call/location ingestion endpoints
-  - AI analysis endpoint (rule-based baseline)
-                |
-                v
-        [Neon PostgreSQL Database]
-  - users
-  - call_logs
-  - location_data
-```
+1.  **AI Dialer & Contact Management**: Modern, premium dialer with haptic feedback and full CRUD for contacts.
+2.  **Call Simulation Engine**: Simulated incoming and outgoing call workflows with realistic UI.
+3.  **VR AI Call Screening**: AI-driven screening process for unknown callers with live transcription hints.
+4.  **Live Transcription & Waveforms**: Interactive active call screen with real-time waveform visualization and AI speech-to-text.
+5.  **Smart AI Replies**: Context-aware reply suggestions powered by backend AI logic.
+6.  **AI Call Summary**: Automatic post-call insights and summary derivation based on call context.
+7.  **Auth System**: Secure JWT-based authentication for persistent data storage.
 
-## 2) Folder Structure
+## 📂 Project Structure
 
 ```text
-ai-sentinel-pwa/
+vr-ai/
   backend/
     app/
-      main.py
-      database.py
-      security.py
-      ai.py
-    requirements.txt
+      main.py        # FastAPI Entry & Endpoints
+      database.py    # SQLAlchemy Neon Connection
+      security.py    # JWT & Hashing Logic
+      ai.py          # AI Analysis Logic
+    requirements.txt # Python Dependencies
   frontend/
-    index.html
-    styles.css
-    app.js
-    manifest.json
-    sw.js
+    index.html       # Mobile-first Glassmorphism UI
+    styles.css       # Premium CSS Design System
+    app.js           # Core Simulation Logic & API Integration
+    manifest.json    # PWA Configuration
   db/
-    schema.sql
-  capacitor.config.json
-  README.md
+    schema.sql       # PostgreSQL Schema (Neon Optimized)
+  app.py             # Render/Production Entry Point
+  render.yaml        # Infrastructure as Code (Render Blueprint)
+  requirements.txt   # Root Dependencies for Render
+  README.md          # Documentation
 ```
 
-## 3) Local Setup
+## 🛠️ Setup Instructions
 
-### Backend
-1. Create `.env` in `backend/`:
+### 1. Database Setup (Neon)
+1. Create a free project at [Neon.tech](https://neon.tech).
+2. Create a new database named `vrai`.
+3. Execute the SQL commands in `db/schema.sql` within the Neon SQL Editor.
 
+### 2. Backend Configuration
+1. Create `.env` inside the `backend/` directory:
 ```env
-DATABASE_URL=postgresql+psycopg://<user>:<password>@<host>/<db>?sslmode=require
-JWT_SECRET=<strong-random-secret>
+DATABASE_URL=postgresql+psycopg://<user>:<password>@<host>/vrai?sslmode=require
+JWT_SECRET=your_super_secret_key
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=1440
 ```
 
-2. Install and run:
-
+### 3. Local Execution
+**Backend:**
 ```bash
-cd backend
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+python -m uvicorn backend.app.main:app --reload --port 8000
 ```
 
-### Frontend
-Serve static files from `frontend/` with any static server (or host on Vercel):
+**Frontend:**
+Serve the `frontend` folder using any static server (e.g., Live Server or `python -m http.server 5173`).
 
-```bash
-cd frontend
-python -m http.server 5173
-```
+## ☁️ Deployment (Render)
 
-Open `http://localhost:5173`.
+This project is pre-configured for one-click deployment on Render:
 
-## 4) Deployment Steps
+1. Push this repository to GitHub.
+2. In Render, select **New > Blueprint**.
+3. Connect this repository.
+4. Render will use the `render.yaml` file to automatically provision the web service with:
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn backend.app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT`
+5. Add the environment variables (`DATABASE_URL`, `JWT_SECRET`, etc.) in the Render dashboard.
 
-### Neon (Database)
-1. Create Neon project and database.
-2. Run `db/schema.sql`.
-3. Copy connection string and set as `DATABASE_URL` in backend host.
+## 🛡️ Privacy & Constraints
+- **Simulation Only**: This application simulates call flows for prototyping purposes.
+- **No Real Calls**: It does not make real cellular or VoIP calls.
+- **Ethics**: Designed to showcase AI's role in screening and assistance without compromising real user privacy.
 
-### Render (FastAPI)
-1. Create new Web Service from repo.
-2. Root directory: `backend`.
-3. Build command: `pip install -r requirements.txt`
-4. Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-5. Add env vars: `DATABASE_URL`, `JWT_SECRET`, `JWT_ALGORITHM`, `JWT_EXPIRE_MINUTES`.
-6. Enable HTTPS (default on Render).
-
-### Vercel (Frontend)
-1. Import repo.
-2. Set root to `frontend`.
-3. Deploy static frontend.
-4. Update `API_BASE_URL` in `frontend/app.js` to Render API URL.
-
-## 5) Convert PWA to Android APK (Capacitor)
-
-1. Install Node.js + Android Studio.
-2. From project root:
-
-```bash
-npm init -y
-npm install @capacitor/core @capacitor/cli @capacitor/android
-npx cap init AISentinel com.example.aisentinel
-```
-
-3. Build/copy frontend assets into a `www/` folder (or point Capacitor to `frontend` output).
-4. Add Android platform:
-
-```bash
-npx cap add android
-npx cap sync android
-npx cap open android
-```
-
-5. In Android Studio: Build > Generate Signed Bundle/APK.
-
-For native call-log integration, add a custom Android plugin with runtime permissions (`READ_CALL_LOG`), and keep explicit in-app consent toggles.
-
-## 6) Browser Limitations vs Native Android
-
-- Browser cannot access full device call logs directly.
-- Browser geolocation works only with user permission and active page context; background behavior is limited by OS/browser.
-- Native Android can read call logs (with permission) and provide more reliable background location workflows, but must comply with Play policies and explicit consent.
-- PWA is faster to ship and cross-platform; native integration is better for deep OS-level telemetry.
-
-## 7) Privacy & Security Notes
-
-- Tracking endpoints enforce explicit user consent flags.
-- No automatic background collection in this starter.
-- JWT auth required on protected endpoints.
-- Use HTTPS in production.
-- For stronger protection, store encrypted columns for sensitive fields and rotate JWT secrets regularly.
+---
+Developed as a Senior Full-Stack Prototype for VR AI.

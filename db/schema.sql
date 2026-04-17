@@ -33,3 +33,15 @@ CREATE TABLE IF NOT EXISTS location_data (
 );
 
 CREATE INDEX IF NOT EXISTS idx_location_user_time ON location_data (user_id, recorded_at DESC);
+CREATE TABLE IF NOT EXISTS contacts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    phone_number TEXT NOT NULL,
+    email TEXT,
+    tag TEXT, -- frequent, spam, personal, business
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(user_id, phone_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_contacts_user ON contacts (user_id);

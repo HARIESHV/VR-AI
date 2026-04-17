@@ -73,7 +73,7 @@ This project is pre-configured for one-click deployment on Render:
 2. In Render, select **New > Blueprint**.
 3. Connect this repository.
 4. Render will use the `render.yaml` file to automatically provision the web service with:
-   - **Build Command**: `python -m pip install --upgrade pip --no-warn-script-location && python -m pip install -r requirements.txt --no-warn-script-location`
+   - **Build Command**: `python -m venv .venv && . .venv/bin/activate && python -m pip install --upgrade pip && python -m pip install -r requirements.txt`
    - **Start Command**: `bash start.sh`
 5. Add the environment variables (`DATABASE_URL`, `JWT_SECRET`, etc.) in the Render dashboard.
 

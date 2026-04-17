@@ -1095,7 +1095,8 @@ function renderContacts() {
       const info = el('div', 'contact-info');
       const name = el('span', 'contact-name', c.name);
       if (c.tag && c.tag !== 'none') {
-        const tag = el('span', `contact-tag-badge tag-${c.tag}`, c.tag);
+        const tagText = c.tag === 'google' ? 'Google' : capitalize(c.tag);
+        const tag = el('span', `contact-tag-badge tag-${c.tag}`, tagText);
         name.appendChild(tag);
       }
       const num = el('span', 'contact-number', c.phone_number);
@@ -1122,6 +1123,13 @@ function openContactModal(contact = null) {
   $('contact-email-input').value = contact ? (contact.email || '') : '';
   $('contact-tag-input').value = contact ? (contact.tag || 'none') : 'none';
   $('delete-contact-btn').style.display = contact ? 'block' : 'none';
+  
+  // Show Google badge if it's a Google contact
+  if (contact && contact.tag === 'google') {
+    $('contact-google-badge').style.display = 'flex';
+  } else {
+    $('contact-google-badge').style.display = 'none';
+  }
   
   contactModal.classList.add('open');
 }
@@ -1193,12 +1201,19 @@ $('google-sync-btn').addEventListener('click', () => {
     return;
   }
 
+  const btn = $('google-sync-btn');
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = '<span>Syncing...</span>';
+  btn.disabled = true;
+
   apiRequest('/auth/google/start')
     .then((data) => {
       if (!data.authorization_url) throw new Error('Missing OAuth URL');
       window.location.href = data.authorization_url;
     })
     .catch((err) => {
+      btn.innerHTML = originalHtml;
+      btn.disabled = false;
       showToast(err.message || 'Failed to start Google sync');
     });
 });

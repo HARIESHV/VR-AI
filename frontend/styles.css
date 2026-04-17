@@ -159,15 +159,27 @@ html, body {
 }
 .icon-btn svg { width: 18px; height: 18px; }
 
-.google-sync-btn {
-  background: rgba(66, 133, 244, 0.1) !important;
-  border-color: rgba(66, 133, 244, 0.3) !important;
-  color: #4285F4 !important;
+.google-btn {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px;
+  padding: 8px 16px !important;
+  border-radius: 50px !important;
+  background: white !important;
+  border: 1px solid #dadce0 !important;
+  color: #3c4043 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  width: auto !important;
 }
-.google-sync-btn:hover {
-  background: rgba(66, 133, 244, 0.2) !important;
-  border-color: #4285F4 !important;
+.google-btn:hover {
+  background: #f8f9fa !important;
+  box-shadow: 0 1px 3px rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
 }
+.google-logo { width: 18px; height: 18px; }
 
 /* Hero */
 .home-hero {
@@ -1156,32 +1168,73 @@ html, body {
 .contacts-toolbar {
   padding: 16px;
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 16px;
   border-bottom: 1px solid rgba(255,255,255,0.05);
 }
+.search-bar-wrapper {
+  position: relative;
+  width: 100%;
+}
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  pointer-events: none;
+}
 .contact-search-input {
-  flex: 1;
+  width: 100%;
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 50px;
-  padding: 0 16px;
+  border-radius: 12px;
+  padding: 12px 12px 12px 42px;
   color: var(--text);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 15px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 .contact-search-input:focus {
   border-color: var(--primary);
-  background: rgba(255,255,255,0.08);
+  background: rgba(124,58,237,0.08);
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
 }
-.contact-search-input::placeholder {
-  color: var(--muted);
+.toolbar-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 .add-contact-btn {
   background: var(--gradient-main) !important;
   color: white !important;
   border: none !important;
+}
+.fab-btn {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 4px 12px rgba(124,58,237,0.4);
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+}
+.fab-btn:hover {
+  transform: scale(1.08) translateY(-2px);
+  box-shadow: 0 6px 20px rgba(124,58,237,0.5);
+}
+.fab-btn svg {
+  width: 24px;
+  height: 24px;
 }
 
 .contacts-list {
@@ -1318,7 +1371,26 @@ html, body {
   width: 40px; height: 4px; background: var(--card-border);
   border-radius: 2px; margin: 0 auto 20px;
 }
-.modal-title { font-family: 'Outfit', sans-serif; font-size: 22px; margin-bottom: 24px; }
+.modal-title { font-family: 'Outfit', sans-serif; font-size: 22px; }
+.modal-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.google-sync-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(66, 133, 244, 0.1);
+  border: 1px solid rgba(66, 133, 244, 0.2);
+  border-radius: 50px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4285F4;
+}
+.google-logo-sm { width: 14px; height: 14px; }
 .modal-form { display: flex; flex-direction: column; gap: 20px; }
 .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
 .modal-btn { flex: 1; padding: 14px; border-radius: var(--radius-sm); font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; }
@@ -1338,3 +1410,8 @@ html, body {
 .tag-frequent { background: rgba(124,58,237,0.15); color: #a78bfa; }
 .tag-business { background: rgba(6,182,212,0.15); color: #22d3ee; }
 .tag-spam { background: rgba(239,68,68,0.15); color: #f87171; }
+.tag-google { 
+  background: rgba(66, 133, 244, 0.1); 
+  color: #4285F4;
+  border: 1px solid rgba(66, 133, 244, 0.2);
+}

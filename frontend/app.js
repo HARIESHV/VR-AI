@@ -920,4 +920,33 @@ function init() {
   }
 }
 
+// ── Tab Navigation (Bottom Nav) ────────────────────
+document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const tabName = btn.dataset.tab;
+    // Update active button
+    document.querySelectorAll('.bottom-nav .nav-item').forEach(n => n.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Update active tab content
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+
+    if(navigator.vibrate) navigator.vibrate(10);
+  });
+});
+
+// ── Contacts List Interactions ─────────────────────
+document.querySelectorAll('.contact-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const name = item.querySelector('.contact-name').textContent;
+    const number = item.querySelector('.contact-number').textContent;
+    
+    // Switch to dialer tab and fill in details automatically, or prompt
+    dialerInput.value = number;
+    initiateOutgoingCall(number, name);
+  });
+});
+
 init();
+

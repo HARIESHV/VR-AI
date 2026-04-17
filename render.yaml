@@ -2,9 +2,11 @@ services:
   - type: web
     name: vr-ai-server
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: python -m pip install --upgrade pip --no-warn-script-location && python -m pip install -r requirements.txt --no-warn-script-location
     startCommand: bash start.sh
     autoDeploy: true
     envVars:
       - key: PORT
         value: 10000
+      - key: PATH
+        value: /opt/render/.local/bin:/usr/local/bin:/usr/bin:/bin

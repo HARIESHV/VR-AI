@@ -73,8 +73,8 @@ This project is pre-configured for one-click deployment on Render:
 2. In Render, select **New > Blueprint**.
 3. Connect this repository.
 4. Render will use the `render.yaml` file to automatically provision the web service with:
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `gunicorn backend.app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT`
+   - **Build Command**: `python -m pip install --upgrade pip --no-warn-script-location && python -m pip install -r requirements.txt --no-warn-script-location`
+   - **Start Command**: `bash start.sh`
 5. Add the environment variables (`DATABASE_URL`, `JWT_SECRET`, etc.) in the Render dashboard.
 
 ## 🛡️ Privacy & Constraints

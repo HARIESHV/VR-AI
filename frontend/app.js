@@ -502,7 +502,9 @@ function simulateTranscript() {
     if (idx >= demoTranscriptLines.length) { clearInterval(interval); return; }
     const line = demoTranscriptLines[idx++];
     addTranscriptLine(line.speaker, line.text);
-    if (line.speaker === 'You' && state.isAIAssist) {
+    
+    // AI assists when the CALLER speaks, to suggest a reply for YOU
+    if (line.speaker !== 'You' && state.isAIAssist) {
       setTimeout(() => generateAIReply(line.text), 800);
     }
   }, 3500);
@@ -1020,7 +1022,13 @@ function renderAISuggestions() {
   container.innerHTML = '';
   
   if (!state.aiSuggestions || state.aiSuggestions.length === 0) {
-    container.style.display = 'none';
+    container.innerHTML = `
+      <div class="ai-empty-state">
+        <div class="ai-empty-icon">✨</div>
+        <div class="ai-empty-text">AI is monitoring unknown calls. Suggestions will appear here automatically.</div>
+      </div>
+    `;
+    container.style.display = 'block';
     return;
   }
 

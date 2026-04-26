@@ -1502,3 +1502,21 @@ html, body {
   text-align: center;
   padding: 20px;
 }
+.ai-empty-state {
+  background: #f8f9fa;
+  border: 1px dashed #dadce0;
+  border-radius: var(--radius-md);
+  padding: 24px 16px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.ai-empty-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+  opacity: 0.8;
+}
+.ai-empty-text {
+  font-size: 13px;
+  color: #70757a;
+  line-height: 1.5;
+}

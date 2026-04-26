@@ -283,6 +283,35 @@ def get_group_suggestion(phone: str, user_id: UUID = Depends(get_current_user_id
     suggested_tag = suggest_group(dict(contact), list(calls))
     return {"phone": phone, "suggested_tag": suggested_tag}
 
+class ReplyIn(BaseModel):
+    text: str
+    phone: str | None = None
+
+@app.post("/ai/reply")
+def ai_reply(payload: ReplyIn, user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    """Generate an AI reply based on user text and contact context."""
+    text_lc = payload.text.lower()
+    
+    # Contextual awareness if phone is provided
+    contact_name = "the caller"
+    if payload.phone:
+        contact = db.execute(
+            text("SELECT name FROM contacts WHERE user_id = :user_id AND phone = :phone"),
+            {"user_id": str(user_id), "phone": payload.phone}
+        ).first()
+        if contact:
+            contact_name = contact.name
+
+    # Simple logic-based replies (could be expanded with LLM)
+    if "who is" in text_lc:
+        return {"reply": f"This is {contact_name} calling."}
+    if "purpose" in text_lc or "why" in text_lc:
+        return {"reply": "I'm checking the purpose of this call for you."}
+    if "available" in text_lc:
+        return {"reply": "I will ask if they are available to talk right now."}
+    
+    return {"reply": "I'm processing this request with VR AI assistant."}
+
 # ── Google Sync Endpoints ──────────────────────────
 
 @app.get("/auth/google/start")
@@ -333,9 +362,69 @@ def google_auth_callback(code: str, state: str, db: Session = Depends(get_db)):
     flow.fetch_token(code=code)
     
     credentials = flow.credentials
+    
+    # Store the refresh token for this user
+    if credentials.refresh_token:
+        db.execute(
+            text("UPDATE users SET google_refresh_token = :token WHERE id = :id"),
+            {"token": credentials.refresh_token, "id": user_id}
+        )
+        db.commit()
+
+    # Perform initial sync
+    sync_google_contacts_internal(user_id, credentials, db)
+    
+    # Update last sync time
+    db.execute(
+        text("UPDATE users SET last_google_sync = NOW() WHERE id = :id"),
+        {"id": user_id}
+    )
+    db.commit()
+    
+    return RedirectResponse(url="/?sync=success")
+
+@app.post("/contacts/sync")
+def sync_contacts_on_demand(credentials: HTTPAuthorizationCredentials = Depends(auth_scheme), db: Session = Depends(get_db)):
+    user_id = decode_access_token(credentials.credentials)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    # Get refresh token
+    user = db.execute(
+        text("SELECT google_refresh_token FROM users WHERE id = :id"),
+        {"id": user_id}
+    ).first()
+
+    if not user or not user.google_refresh_token:
+        raise HTTPException(status_code=400, detail="Google account not connected")
+
+    from google.oauth2.credentials import Credentials
+    google_creds = Credentials(
+        None,
+        refresh_token=user.google_refresh_token,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+    )
+
+    try:
+        google_creds.refresh(GoogleRequest())
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Could not refresh Google token. Please reconnect.")
+
+    count = sync_google_contacts_internal(user_id, google_creds, db)
+    
+    db.execute(
+        text("UPDATE users SET last_google_sync = NOW() WHERE id = :id"),
+        {"id": user_id}
+    )
+    db.commit()
+
+    return {"message": f"Synced {count} contacts from Google"}
+
+def sync_google_contacts_internal(user_id: str, credentials, db: Session):
     service = build("people", "v1", credentials=credentials)
     
-    # Fetch contacts
     results = service.people().connections().list(
         resourceName="people/me",
         pageSize=1000,
@@ -343,20 +432,18 @@ def google_auth_callback(code: str, state: str, db: Session = Depends(get_db)):
     ).execute()
     
     connections = results.get("connections", [])
-    synced_count = 0
+    count = 0
     
     for person in connections:
         name = person.get("names", [{}])[0].get("displayName", "Unnamed Contact")
         phones = person.get("phoneNumbers", [])
         emails = person.get("emailAddresses", [])
-        
         email = emails[0].get("value") if emails else None
         
         for p in phones:
             phone_num = p.get("value")
             if not phone_num: continue
             
-            # Upsert into DB
             db.execute(
                 text(
                     """
@@ -373,12 +460,8 @@ def google_auth_callback(code: str, state: str, db: Session = Depends(get_db)):
                     "email": email,
                 },
             )
-            synced_count += 1
-            
-    db.commit()
-    
-    # Redirect back to frontend with a success flag
-    return RedirectResponse(url="/?sync=success")
+            count += 1
+    return count
 
 # ── Static Files ────────────────────────────────────
 

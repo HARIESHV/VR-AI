@@ -568,8 +568,11 @@ async function generateAIReply(userText) {
   try {
     const res = await fetch(`${API_BASE}/ai/reply`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: userText }),
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authState.token}`
+      },
+      body: JSON.stringify({ text: userText, phone: state.callerNumber }),
       signal: AbortSignal.timeout(3000),
     });
     if (res.ok) {
@@ -986,7 +989,65 @@ async function init() {
 async function refreshAppData() {
   await fetchContacts();
   refreshRecentList();
+  
+  // Background sync Google contacts if connected
+  if (authState.isLoggedIn) {
+    console.log('Starting background Google sync...');
+    apiRequest('/contacts/sync', 'POST')
+      .then(res => {
+        console.log('Sync complete:', res.message);
+        fetchContacts(); // Refresh UI after sync
+      })
+      .catch(err => {
+        console.log('Background sync skipped or failed:', err.message);
+      });
+    
+    fetchAISuggestions();
+  }
 }
+
+async function fetchAISuggestions() {
+  try {
+    const data = await apiRequest('/ai/suggestions');
+    state.aiSuggestions = data.name_suggestions;
+    renderAISuggestions();
+  } catch {}
+}
+
+function renderAISuggestions() {
+  const container = $('ai-suggestions-container');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  if (!state.aiSuggestions || state.aiSuggestions.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+
+  container.style.display = 'block';
+  state.aiSuggestions.forEach(s => {
+    const card = el('div', 'suggestion-card');
+    card.innerHTML = `
+      <div class="suggestion-info">
+        <span class="suggestion-phone">${s.phone}</span>
+        <span class="suggestion-name">Suggest: ${s.suggested_name}</span>
+      </div>
+      <button class="link-btn" onclick="linkAISuggestion('${s.phone}', '${s.suggested_name}')">Link</button>
+    `;
+    container.appendChild(card);
+  });
+}
+
+window.linkAISuggestion = async (phone, name) => {
+  try {
+    await apiRequest('/contacts', 'POST', { name, phone, tag: 'ai' });
+    showToast(`Linked ${name} to contacts`);
+    refreshAppData();
+  } catch (err) {
+    showToast(err.message);
+  }
+};
+
 
 // ── Tab Navigation (Bottom Nav) ────────────────────
 document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => {
@@ -1187,34 +1248,41 @@ $('contact-search').addEventListener('input', (e) => {
   });
 });
 
-// Google Sync Event
-$('google-sync-btn').addEventListener('click', () => {
-  if (!authState.isLoggedIn) return showToast('Please sign in to sync contacts');
-
-  const token = authState.token;
-  if (!token) return;
-
-  const payload = parseJwtPayload(token);
-  if (!payload || !payload.sub) {
-    showToast('Session expired. Please sign in again.');
-    return;
-  }
+// Google Sync Event (Unified)
+$('google-sync-btn').addEventListener('click', async () => {
+  if (!authState.isLoggedIn) return showToast('Please sign in to VR AI first');
 
   const btn = $('google-sync-btn');
   const originalHtml = btn.innerHTML;
   btn.innerHTML = '<span>Syncing...</span>';
   btn.disabled = true;
 
-  apiRequest('/auth/google/start')
-    .then((data) => {
-      if (!data.authorization_url) throw new Error('Missing OAuth URL');
-      window.location.href = data.authorization_url;
-    })
-    .catch((err) => {
+  try {
+    // Try background sync first
+    const res = await apiRequest('/contacts/sync', 'POST');
+    showToast(res.message);
+    fetchContacts();
+    btn.innerHTML = originalHtml;
+    btn.disabled = false;
+  } catch (err) {
+    // If not connected, start OAuth flow
+    if (err.message.includes('not connected') || err.message.includes('refresh')) {
+      apiRequest('/auth/google/start')
+        .then((data) => {
+          if (!data.authorization_url) throw new Error('Missing OAuth URL');
+          window.location.href = data.authorization_url;
+        })
+        .catch((err) => {
+          btn.innerHTML = originalHtml;
+          btn.disabled = false;
+          showToast(err.message || 'Failed to start Google sync');
+        });
+    } else {
       btn.innerHTML = originalHtml;
       btn.disabled = false;
-      showToast(err.message || 'Failed to start Google sync');
-    });
+      showToast(err.message || 'Sync failed');
+    }
+  }
 });
 
 init();

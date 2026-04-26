@@ -1117,7 +1117,16 @@ async function apiRequest(path, method = 'GET', body = null) {
     body: body ? JSON.stringify(body) : null,
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.detail || 'Request failed');
+  if (!res.ok) {
+    if (data.detail === 'Invalid token') {
+      localStorage.removeItem('vrai-token');
+      authState.isLoggedIn = false;
+      authState.token = null;
+      updateAuthModeUI();
+      showScreen('auth');
+    }
+    throw new Error(data.detail || 'Request failed');
+  }
   return data;
 }
 

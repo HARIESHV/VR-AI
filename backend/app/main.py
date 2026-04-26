@@ -1,4 +1,8 @@
+# Load environment variables FIRST
+from dotenv import load_dotenv
 import os
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+
 import asyncio
 import json
 import base64
@@ -23,10 +27,6 @@ from .security import create_access_token, decode_access_token, hash_password, v
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request as GoogleRequest
-
-# Load environment variables
-from dotenv import load_dotenv
-load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")

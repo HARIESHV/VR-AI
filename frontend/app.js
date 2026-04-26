@@ -132,7 +132,7 @@ function initiateOutgoingCall(number, name) {
   
   // Try to find contact name if not provided
   if (!name) {
-    const contact = state.contacts.find(c => c.phone_number === number);
+    const contact = state.contacts.find(c => c.phone === number);
     state.callerName = contact ? contact.name : formatNumber(number);
   } else {
     state.callerName = name;
@@ -182,7 +182,7 @@ async function triggerIncomingCall(name, number) {
   // AI Name Suggestion for Unknown
   if (name === 'Unknown') {
      try {
-       const res = await apiRequest(`/ai/suggest-name?phone_number=${number}`);
+       const res = await apiRequest(`/ai/suggest-name?phone=${number}`);
        if (res.name !== 'Unknown Caller') {
          $('incoming-caller-name').innerHTML = `${name} <span style="font-size:12px; color:var(--primary-2); display:block; margin-top:4px">AI Hint: ${res.name}</span>`;
        }
@@ -367,8 +367,10 @@ function drawWaveform() {
 
     ctx.clearRect(0, 0, W, H);
     const grad = ctx.createLinearGradient(0, 0, W, 0);
-    grad.addColorStop(0, '#7C3AED');
-    grad.addColorStop(1, '#06B6D4');
+    grad.addColorStop(0, '#4285F4');
+    grad.addColorStop(0.33, '#EA4335');
+    grad.addColorStop(0.66, '#FBBC05');
+    grad.addColorStop(1, '#34A853');
     ctx.strokeStyle = grad;
     ctx.lineWidth   = 2.5;
     ctx.beginPath();
@@ -402,8 +404,10 @@ function drawFakeWaveform() {
     state.animFrame = requestAnimationFrame(draw);
     ctx.clearRect(0, 0, W, H);
     const grad = ctx.createLinearGradient(0, 0, W, 0);
-    grad.addColorStop(0, '#7C3AED');
-    grad.addColorStop(1, '#06B6D4');
+    grad.addColorStop(0, '#4285F4');
+    grad.addColorStop(0.33, '#EA4335');
+    grad.addColorStop(0.66, '#FBBC05');
+    grad.addColorStop(1, '#34A853');
     ctx.strokeStyle = grad;
     ctx.lineWidth   = 2.5;
     ctx.beginPath();
@@ -863,12 +867,11 @@ async function addRecentCall(name, number, direction, duration) {
   // Save to DB if logged in
   if (authState.isLoggedIn) {
     try {
-      await apiRequest('/call-logs', 'POST', {
-        phone_number: number,
-        direction,
-        duration_seconds: duration,
-        call_time: now.toISOString(),
-        source: 'vr-ai-web'
+      await apiRequest('/calls', 'POST', {
+        phone: number,
+        type: direction,
+        duration: duration,
+        timestamp: now.toISOString()
       });
     } catch (err) { console.warn('Failed to save call log to DB:', err); }
   }
@@ -935,12 +938,8 @@ function capitalize(str) {
 
 function randomGradient(seed) {
   const gradients = [
-    'linear-gradient(135deg,#7C3AED,#06B6D4)',
-    'linear-gradient(135deg,#F59E0B,#EF4444)',
-    'linear-gradient(135deg,#10B981,#06B6D4)',
-    'linear-gradient(135deg,#EC4899,#7C3AED)',
-    'linear-gradient(135deg,#3B82F6,#10B981)',
-    'linear-gradient(135deg,#F97316,#EF4444)',
+    '#4285F4', '#EA4335', '#F29900', '#34A853',
+    '#673AB7', '#3F51B5', '#009688', '#E91E63'
   ];
   let hash = 0;
   for (let i = 0; i < seed.length; i++) hash ^= seed.charCodeAt(i);
@@ -1099,7 +1098,7 @@ function renderContacts() {
         const tag = el('span', `contact-tag-badge tag-${c.tag}`, tagText);
         name.appendChild(tag);
       }
-      const num = el('span', 'contact-number', c.phone_number);
+      const num = el('span', 'contact-number', c.phone);
       info.append(name, num);
       item.append(avatar, info);
       
@@ -1116,10 +1115,10 @@ const contactModal = $('contact-modal');
 let editingContactId = null;
 
 function openContactModal(contact = null) {
-  editingContactId = contact ? contact.phone_number : null;
+  editingContactId = contact ? contact.phone : null;
   $('contact-modal-title').textContent = contact ? 'Edit Contact' : 'New Contact';
   $('contact-name-input').value = contact ? contact.name : '';
-  $('contact-phone-input').value = contact ? contact.phone_number : (dialerInput.value || '');
+  $('contact-phone-input').value = contact ? contact.phone : (dialerInput.value || '');
   $('contact-email-input').value = contact ? (contact.email || '') : '';
   $('contact-tag-input').value = contact ? (contact.tag || 'none') : 'none';
   $('delete-contact-btn').style.display = contact ? 'block' : 'none';
@@ -1150,7 +1149,7 @@ $('save-contact-btn').addEventListener('click', async () => {
   if (!name || !num) return showToast('Name and Number are required');
   
   try {
-    await apiRequest('/contacts', 'POST', { name, phone_number: num, email, tag });
+    await apiRequest('/contacts', 'POST', { name, phone: num, email, tag });
     showToast('Contact saved');
     fetchContacts();
     closeContactModal();

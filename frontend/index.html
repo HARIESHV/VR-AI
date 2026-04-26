@@ -25,7 +25,7 @@
              <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="18" cy="18" r="18" fill="url(#gradAuth)"/>
               <path d="M10 12l8 12 8-12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <defs><linearGradient id="gradAuth" x1="0" y1="0" x2="36" y2="36"><stop stop-color="#7C3AED"/><stop offset="1" stop-color="#06B6D4"/></linearGradient></defs>
+              <defs><linearGradient id="gradAuth" x1="0" y1="0" x2="36" y2="36"><stop offset="0%" stop-color="#4285F4"/><stop offset="33%" stop-color="#EA4335"/><stop offset="66%" stop-color="#FBBC05"/><stop offset="100%" stop-color="#34A853"/></linearGradient></defs>
             </svg>
           </div>
           <span class="brand-name">VR AI</span>
@@ -69,8 +69,10 @@
             <line x1="18" y1="10" x2="18" y2="15" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
             <defs>
               <linearGradient id="grad1" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#7C3AED"/>
-                <stop offset="1" stop-color="#06B6D4"/>
+                <stop offset="0%" stop-color="#4285F4"/>
+                <stop offset="33%" stop-color="#EA4335"/>
+                <stop offset="66%" stop-color="#FBBC05"/>
+                <stop offset="100%" stop-color="#34A853"/>
               </linearGradient>
             </defs>
           </svg>
@@ -94,8 +96,10 @@
             <circle cx="30" cy="28" r="5" fill="white" opacity="0.95"/>
             <defs>
               <linearGradient id="avatarGrad" x1="0" y1="0" x2="60" y2="60">
-                <stop stop-color="#7C3AED"/>
-                <stop offset="1" stop-color="#06B6D4"/>
+                <stop offset="0%" stop-color="#4285F4"/>
+                <stop offset="33%" stop-color="#EA4335"/>
+                <stop offset="66%" stop-color="#FBBC05"/>
+                <stop offset="100%" stop-color="#34A853"/>
               </linearGradient>
             </defs>
           </svg>
@@ -154,17 +158,17 @@
         <h3 class="section-title">Recent</h3>
         <div id="recent-calls-list">
           <div class="recent-item">
-            <div class="recent-avatar" style="background: linear-gradient(135deg,#7C3AED,#06B6D4)">A</div>
+            <div class="recent-avatar" style="background: #4285F4">A</div>
             <div class="recent-info"><span class="recent-name">Alex</span><span class="recent-meta incoming">↙ Incoming · 3m 21s</span></div>
             <span class="recent-time">Today</span>
           </div>
           <div class="recent-item">
-            <div class="recent-avatar" style="background: linear-gradient(135deg,#F59E0B,#EF4444)">S</div>
+            <div class="recent-avatar" style="background: #EA4335">S</div>
             <div class="recent-info"><span class="recent-name">Sarah</span><span class="recent-meta outgoing">↗ Outgoing · 1m 05s</span></div>
             <span class="recent-time">Yesterday</span>
           </div>
           <div class="recent-item">
-            <div class="recent-avatar" style="background: linear-gradient(135deg,#10B981,#06B6D4)">M</div>
+            <div class="recent-avatar" style="background: #34A853">M</div>
             <div class="recent-info"><span class="recent-name">Mom</span><span class="recent-meta incoming">↙ Incoming · 12m 45s</span></div>
             <span class="recent-time">Mon</span>
           </div>
@@ -197,11 +201,11 @@
           <div class="contact-group">
             <div class="contact-letter">A</div>
             <div class="contact-item">
-              <div class="contact-avatar" style="background: linear-gradient(135deg,#7C3AED,#06B6D4)">A</div>
+              <div class="contact-avatar" style="background: #4285F4">A</div>
               <div class="contact-info"><span class="contact-name">Alex</span><span class="contact-number">+1 (555) 123-4567</span></div>
             </div>
             <div class="contact-item">
-              <div class="contact-avatar" style="background: linear-gradient(135deg,#F59E0B,#EF4444)">A</div>
+              <div class="contact-avatar" style="background: #EA4335">A</div>
               <div class="contact-info"><span class="contact-name">Amanda</span><span class="contact-number">+1 (555) 987-6543</span></div>
             </div>
           </div>
@@ -209,7 +213,7 @@
           <div class="contact-group">
             <div class="contact-letter">M</div>
             <div class="contact-item">
-              <div class="contact-avatar" style="background: linear-gradient(135deg,#10B981,#06B6D4)">M</div>
+              <div class="contact-avatar" style="background: #34A853">M</div>
               <div class="contact-info"><span class="contact-name">Mom</span><span class="contact-number">+1 (555) 111-2222</span></div>
             </div>
           </div>
@@ -217,7 +221,7 @@
           <div class="contact-group">
             <div class="contact-letter">S</div>
             <div class="contact-item">
-              <div class="contact-avatar" style="background: linear-gradient(135deg,#F59E0B,#EF4444)">S</div>
+              <div class="contact-avatar" style="background: #EA4335">S</div>
               <div class="contact-info"><span class="contact-name">Sarah</span><span class="contact-number">+1 (555) 333-4444</span></div>
             </div>
           </div>
@@ -285,6 +289,10 @@
 
   <!-- Bottom Navigation -->
   <nav class="bottom-nav">
+    <button class="nav-item" data-tab="ai">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 12L2.69 7"/><path d="M12 12l5.63 8.16"/></svg>
+      <span>AI Assistant</span>
+    </button>
     <button class="nav-item active" data-tab="recents">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       <span>Recents</span>
@@ -299,6 +307,10 @@
     </button>
   </nav>
 
+  <!-- AI Assistant Tab Content (Inside screen-home) -->
+  <!-- Need to add tab-ai div to index.html -->
+
+
   <!-- ===== SCREEN 2: INCOMING CALL ===== -->
   <div id="screen-incoming" class="screen">
     <div class="call-bg">
@@ -307,7 +319,7 @@
       <div class="call-bg-ripple r3"></div>
     </div>
     <div class="ai-banner incoming-banner">
-      <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="url(#b1)"/><path d="M4 7l4 6 4-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="7" r="2" fill="white"/><defs><linearGradient id="b1" x1="0" y1="0" x2="16" y2="16"><stop stop-color="#7C3AED"/><stop offset="1" stop-color="#06B6D4"/></linearGradient></defs></svg>
+      <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="url(#b1)"/><path d="M4 7l4 6 4-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="7" r="2" fill="white"/><defs><linearGradient id="b1" x1="0" y1="0" x2="16" y2="16"><stop offset="0%" stop-color="#4285F4"/><stop offset="33%" stop-color="#EA4335"/><stop offset="66%" stop-color="#FBBC05"/><stop offset="100%" stop-color="#34A853"/></linearGradient></defs></svg>
       VR AI · Screening call
     </div>
     <div class="caller-info">
@@ -407,7 +419,7 @@
     <div class="transcript-card glass-card">
       <div class="transcript-header">
         <div class="transcript-title">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><circle cx="12" cy="12" r="10" stroke="url(#tg)" stroke-width="2"/><path d="M8 12h8M8 8h5M8 16h6" stroke="url(#tg)" stroke-width="2" stroke-linecap="round"/><defs><linearGradient id="tg" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#7C3AED"/><stop offset="1" stop-color="#06B6D4"/></linearGradient></defs></svg>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><circle cx="12" cy="12" r="10" stroke="url(#tg)" stroke-width="2"/><path d="M8 12h8M8 8h5M8 16h6" stroke="url(#tg)" stroke-width="2" stroke-linecap="round"/><defs><linearGradient id="tg" x1="0" y1="0" x2="24" y2="24"><stop offset="0%" stop-color="#4285F4"/><stop offset="33%" stop-color="#EA4335"/><stop offset="66%" stop-color="#FBBC05"/><stop offset="100%" stop-color="#34A853"/></linearGradient></defs></svg>
           Live Transcript
         </div>
         <div class="ai-thinking" id="ai-thinking">
@@ -474,7 +486,7 @@
         <svg viewBox="0 0 60 60" fill="none">
           <circle cx="30" cy="30" r="30" fill="url(#sg)"/>
           <path d="M20 30l7 7 13-14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-          <defs><linearGradient id="sg" x1="0" y1="0" x2="60" y2="60"><stop stop-color="#7C3AED"/><stop offset="1" stop-color="#10B981"/></linearGradient></defs>
+          <defs><linearGradient id="sg" x1="0" y1="0" x2="60" y2="60"><stop offset="0%" stop-color="#4285F4"/><stop offset="33%" stop-color="#EA4335"/><stop offset="66%" stop-color="#FBBC05"/><stop offset="100%" stop-color="#34A853"/></linearGradient></defs>
         </svg>
       </div>
       <h2 class="summary-title">Call Ended</h2>
@@ -482,7 +494,7 @@
 
       <div class="summary-card glass-card">
         <div class="summary-section-title">
-          <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><circle cx="8" cy="8" r="8" fill="url(#sg2)"/><path d="M4 7l4 6 4-6" stroke="white" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="7" r="2" fill="white"/><defs><linearGradient id="sg2" x1="0" y1="0" x2="16" y2="16"><stop stop-color="#7C3AED"/><stop offset="1" stop-color="#06B6D4"/></linearGradient></defs></svg>
+          <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><circle cx="8" cy="8" r="8" fill="url(#sg2)"/><path d="M4 7l4 6 4-6" stroke="white" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="7" r="2" fill="white"/><defs><linearGradient id="sg2" x1="0" y1="0" x2="16" y2="16"><stop offset="0%" stop-color="#4285F4"/><stop offset="33%" stop-color="#EA4335"/><stop offset="66%" stop-color="#FBBC05"/><stop offset="100%" stop-color="#34A853"/></linearGradient></defs></svg>
           AI Call Summary
         </div>
         <p class="summary-text" id="summary-ai-text">Generating summary…</p>

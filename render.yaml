@@ -2,8 +2,14 @@ services:
   - type: web
     name: vr-ai-server
     env: python
-    buildCommand: bash build.sh
-    startCommand: bash start.sh
+    buildCommand: |
+      echo "--- Build Started ---"
+      python -m pip install --upgrade pip
+      python -m pip install -r requirements.txt
+      echo "--- Dependencies Installed ---"
+      ls -R backend/app
+      echo "--- Build Finished ---"
+    startCommand: python -m uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
     autoDeploy: true
     envVars:
       - key: PORT

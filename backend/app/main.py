@@ -32,6 +32,10 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback")
 
+# Enable insecure transport for local development (HTTP instead of HTTPS)
+if "localhost" in GOOGLE_REDIRECT_URI or "127.0.0.1" in GOOGLE_REDIRECT_URI:
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+
 
 app = FastAPI(title="VR AI – Intelligent Contact Manager", version="3.0.0")
 auth_scheme = HTTPBearer()
@@ -341,6 +345,9 @@ def ai_reply(payload: ReplyIn, user_id: UUID = Depends(get_current_user_id), db:
 
 @app.get("/auth/google/start")
 def google_auth_start(credentials: HTTPAuthorizationCredentials = Depends(auth_scheme)):
+    if not GOOGLE_CLIENT_ID or GOOGLE_CLIENT_ID == "your_client_id":
+        raise HTTPException(status_code=400, detail="Google Client ID is not configured in .env")
+    
     user_id = decode_access_token(credentials.credentials)
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -355,7 +362,10 @@ def google_auth_start(credentials: HTTPAuthorizationCredentials = Depends(auth_s
                 "redirect_uris": [GOOGLE_REDIRECT_URI],
             }
         },
-        scopes=["https://www.googleapis.com/auth/contacts.readonly"],
+        scopes=[
+            "https://www.googleapis.com/auth/contacts.readonly",
+            "https://www.googleapis.com/auth/gmail.readonly"
+        ],
     )
     flow.redirect_uri = GOOGLE_REDIRECT_URI
     
@@ -381,7 +391,10 @@ def google_auth_callback(code: str, state: str, db: Session = Depends(get_db)):
                 "redirect_uris": [GOOGLE_REDIRECT_URI],
             }
         },
-        scopes=["https://www.googleapis.com/auth/contacts.readonly"],
+        scopes=[
+            "https://www.googleapis.com/auth/contacts.readonly",
+            "https://www.googleapis.com/auth/gmail.readonly"
+        ],
     )
     flow.redirect_uri = GOOGLE_REDIRECT_URI
     flow.fetch_token(code=code)
@@ -487,6 +500,67 @@ def sync_google_contacts_internal(user_id: str, credentials, db: Session):
             )
             count += 1
     return count
+
+@app.get("/contacts/{phone}/emails")
+def get_contact_emails(phone: str, credentials: HTTPAuthorizationCredentials = Depends(auth_scheme), db: Session = Depends(get_db)):
+    user_id = decode_access_token(credentials.credentials)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    # 1. Get contact email
+    contact = db.execute(
+        text("SELECT email FROM contacts WHERE user_id = :user_id AND phone = :phone"),
+        {"user_id": str(user_id), "phone": phone}
+    ).first()
+    
+    if not contact or not contact.email:
+        return {"items": [], "message": "No email address found for this contact"}
+
+    # 2. Get refresh token
+    user = db.execute(
+        text("SELECT google_refresh_token FROM users WHERE id = :id"),
+        {"id": user_id}
+    ).first()
+
+    if not user or not user.google_refresh_token:
+        raise HTTPException(status_code=400, detail="Google account not connected")
+
+    from google.oauth2.credentials import Credentials
+    google_creds = Credentials(
+        None,
+        refresh_token=user.google_refresh_token,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+    )
+
+    try:
+        google_creds.refresh(GoogleRequest())
+    except Exception:
+        raise HTTPException(status_code=401, detail="Could not refresh Google token")
+
+    # 3. Search Gmail
+    gmail = build("gmail", "v1", credentials=google_creds)
+    query = f"from:{contact.email} OR to:{contact.email}"
+    
+    results = gmail.users().messages().list(userId="me", q=query, maxResults=5).execute()
+    messages = results.get("messages", [])
+    
+    email_list = []
+    for msg in messages:
+        m = gmail.users().messages().get(userId="me", id=msg["id"], format="metadata", metadataHeaders=["Subject", "From", "Date"]).execute()
+        headers = m.get("payload", {}).get("headers", [])
+        
+        email_data = {
+            "id": msg["id"],
+            "snippet": m.get("snippet"),
+            "subject": next((h["value"] for h in headers if h["name"] == "Subject"), "No Subject"),
+            "from": next((h["value"] for h in headers if h["name"] == "From"), "Unknown"),
+            "date": next((h["value"] for h in headers if h["name"] == "Date"), ""),
+        }
+        email_list.append(email_data)
+        
+    return {"items": email_list}
 
 # ── Static Files ────────────────────────────────────
 

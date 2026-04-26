@@ -1191,7 +1191,42 @@ function openContactModal(contact = null) {
     $('contact-google-badge').style.display = 'none';
   }
   
+  // Fetch recent emails if email exists
+  if (contact && contact.email) {
+    fetchRecentEmails(contact.phone);
+  } else {
+    $('recent-emails-section').style.display = 'none';
+  }
+  
   contactModal.classList.add('open');
+}
+
+async function fetchRecentEmails(phone) {
+  const section = $('recent-emails-section');
+  const list = $('recent-emails-list');
+  section.style.display = 'block';
+  list.innerHTML = '<div class="email-loading">Loading emails...</div>';
+  
+  try {
+    const data = await apiRequest(`/contacts/${phone}/emails`);
+    list.innerHTML = '';
+    if (!data.items || data.items.length === 0) {
+      list.innerHTML = '<div class="email-empty">No recent emails found.</div>';
+      return;
+    }
+    
+    data.items.forEach(email => {
+      const item = el('div', 'email-item');
+      item.innerHTML = `
+        <div class="email-subject">${email.subject}</div>
+        <div class="email-snippet">${email.snippet}</div>
+        <div class="email-date">${email.date}</div>
+      `;
+      list.appendChild(item);
+    });
+  } catch (err) {
+    list.innerHTML = `<div class="email-error">Error loading emails: ${err.message}</div>`;
+  }
 }
 
 function closeContactModal() {

@@ -214,7 +214,32 @@ def log_call(payload: CallIn, user_id: UUID = Depends(get_current_user_id), db: 
 
 @app.get("/ai/suggestions")
 def get_ai_suggestions(user_id: UUID = Depends(get_current_user_id), db: Session = Depends(get_db)):
-    # 1. Unknown number name suggestions (Simulated or based on AI suggestions table)
+    # 1. Proactively suggest names for unknown callers in history
+    unknown_calls = db.execute(
+        text("SELECT DISTINCT phone FROM call_logs WHERE user_id = :user_id AND contact_id IS NULL"),
+        {"user_id": str(user_id)}
+    ).mappings().all()
+    
+    for call in unknown_calls:
+        phone = call["phone"]
+        # Check if suggestion already exists
+        exists = db.execute(
+            text("SELECT 1 FROM ai_suggestions WHERE user_id = :user_id AND phone = :phone"),
+            {"user_id": str(user_id), "phone": phone}
+        ).first()
+        
+        if not exists:
+            # Simulated name lookup (would be a real API in production)
+            name_map = {"9876543210": "James Smith", "1234567890": "Tech Support", "5550199": "Pizza Delivery"}
+            clean_phone = phone.replace("+", "").replace(" ", "")
+            suggested_name = name_map.get(clean_phone, "Potential Contact")
+            
+            db.execute(
+                text("INSERT INTO ai_suggestions (user_id, phone, suggested_name, confidence_score) VALUES (:user_id, :phone, :name, 0.8)"),
+                {"user_id": str(user_id), "phone": phone, "name": suggested_name}
+            )
+    db.commit()
+
     suggestions = db.execute(
         text("SELECT phone, suggested_name, confidence_score FROM ai_suggestions WHERE user_id = :user_id"),
         {"user_id": str(user_id)}
